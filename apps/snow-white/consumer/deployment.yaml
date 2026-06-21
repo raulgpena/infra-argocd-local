@@ -1,0 +1,47 @@
+# Background worker — no Service. Argo CD injects namespace "snow-white".
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consumer
+  labels:
+    app: consumer
+    env: local
+    project: snow-white
+    version: "0.1.0"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: consumer
+  template:
+    metadata:
+      labels:
+        app: consumer
+        env: local
+        project: snow-white
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: consumer
+          # Placeholder worker — replace with your real consumer image (pinned tag).
+          image: busybox:1.36
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "snow-white consumer started";
+              while true; do touch /tmp/healthy; echo "processing..."; sleep 15; done
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          livenessProbe:
+            exec:
+              command: ["cat", "/tmp/healthy"]
+            initialDelaySeconds: 10
+            periodSeconds: 20
