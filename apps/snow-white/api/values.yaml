@@ -1,0 +1,41 @@
+# base-app values — Snow White API (Deployment + Service + Ingress).
+# Rendered by Argo CD from the base-app chart (GitHub Packages) + this file.
+fullnameOverride: api
+project: snow-white
+env: local
+
+image:
+  repository: hashicorp/http-echo # public Docker Hub image
+  tag: "0.2.3"
+  pullPolicy: IfNotPresent
+
+deployment:
+  enabled: true
+  containerPort: 8080
+  args:
+    - "-listen=:8080"
+    - "-text=snow-white api"
+
+service:
+  enabled: true
+  port: 80
+  targetPort: 8080
+
+ingress:
+  enabled: true
+  className: nginx
+  host: snow-white-api.127.0.0.1.nip.io
+
+# http-echo answers every path with its text -> 200, so probe "/".
+probes:
+  enabled: true
+  liveness:
+    httpGet:
+      path: /
+      port: 8080
+    initialDelaySeconds: 5
+  readiness:
+    httpGet:
+      path: /
+      port: 8080
+    initialDelaySeconds: 3

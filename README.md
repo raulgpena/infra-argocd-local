@@ -22,21 +22,35 @@ and turns each `<service>` folder into an Argo CD `Application`:
 | `apps/cars/consumer`        | `cars-consumer`        | `cars`       | `cars`       |
 | `apps/cars/migration`       | `cars-migration`       | `cars`       | `cars`       |
 
+## How apps are rendered
+
+Apps are **not** raw manifests. Each service folder holds a single
+`values.yaml` consumed by the reusable **`base-app`** Helm chart (published to
+GitHub Packages). Argo CD builds each app as a **multi-source** Application:
+
+1. the `base-app` chart (from `ghcr.io/<owner>/charts`)
+2. this repo, supplying `apps/<project>/<service>/values.yaml`
+
+The chart, its version, and the registry are configured in the `infra-k8s-local`
+Terraform (`base_app_chart_*` variables).
+
 ## Conventions
 
 - **Project = middle folder** (`snow-white`, `cars`) — also the namespace.
 - **Service = leaf folder** (`api`, `consumer`, `migration`).
-- Manifests **do not** set `metadata.namespace`; Argo CD injects the destination
+- Each leaf folder contains exactly one `values.yaml` for the `base-app` chart.
+- `base-app` omits `metadata.namespace`; Argo CD injects the destination
   namespace (and creates it via `CreateNamespace=true`).
-- Service roles:
-  - `api`       — `Deployment` + `Service` (+ `Ingress`), HTTP-facing.
-  - `consumer`  — `Deployment` only, background worker (no `Service`).
-  - `migration` — `Job` run as an Argo CD **Sync hook** before the rollout.
+- Service roles (driven by toggles in `values.yaml`):
+  - `api`       — `Deployment` + `Service` + `Ingress`, HTTP-facing.
+  - `consumer`  — `Deployment` only, background worker (`service.enabled: false`).
+  - `migration` — `Job` (`job.enabled: true`, `job.argocdHook: true`), runs as an
+    Argo CD **Sync hook**.
 
 ## Add a new service
 
-Create `apps/<project>/<service>/` with its manifests, commit, push. Argo CD
-picks it up automatically — no Terraform change needed.
+Create `apps/<project>/<service>/values.yaml`, commit, push. Argo CD picks it up
+automatically — no Terraform change needed.
 
 ## Add a new project
 
