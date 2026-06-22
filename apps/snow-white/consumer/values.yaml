@@ -21,14 +21,18 @@ deployment:
       while true; do touch /tmp/healthy; echo "processing..."; sleep 15; done
 
 # No HTTP endpoint -> use an exec probe.
+# httpGet: null clears the chart's default httpGet handler (Helm deep-merges
+# values, so without this the probe would have two handler types).
 probes:
   enabled: true
   liveness:
+    httpGet: null
     exec:
       command: ["cat", "/tmp/healthy"]
     initialDelaySeconds: 10
     periodSeconds: 20
   readiness:
+    httpGet: null
     exec:
       command: ["cat", "/tmp/healthy"]
     initialDelaySeconds: 10
