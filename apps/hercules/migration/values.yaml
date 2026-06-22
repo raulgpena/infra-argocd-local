@@ -1,0 +1,23 @@
+# base-app values — Hercules migration (Job, Argo CD Sync hook, no Deployment).
+fullnameOverride: migration
+project: hercules
+env: local
+
+image:
+  repository: busybox # public Docker Hub image
+  tag: "1.36"
+  pullPolicy: IfNotPresent
+
+deployment:
+  enabled: false
+service:
+  enabled: false
+
+job:
+  enabled: true
+  argocdHook: true
+  command:
+    - /bin/sh
+    - -c
+    - |
+      echo "running cars migrations..."; sleep 5; echo "migrations complete"
