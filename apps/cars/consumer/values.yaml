@@ -1,0 +1,38 @@
+# base-app values — Cars consumer (background worker, no Service).
+fullnameOverride: consumer
+project: cars
+env: local
+
+image:
+  repository: busybox # public Docker Hub image
+  tag: "1.36"
+  pullPolicy: IfNotPresent
+
+service:
+  enabled: false
+
+deployment:
+  enabled: true
+  command:
+    - /bin/sh
+    - -c
+    - |
+      echo "cars consumer started";
+      while true; do touch /tmp/healthy; echo "processing..."; sleep 15; done
+
+# httpGet: null clears the chart's default httpGet handler (Helm deep-merges
+# values, so without this the probe would have two handler types).
+probes:
+  enabled: true
+  liveness:
+    httpGet: null
+    exec:
+      command: ["cat", "/tmp/healthy"]
+    initialDelaySeconds: 10
+    periodSeconds: 20
+  readiness:
+    httpGet: null
+    exec:
+      command: ["cat", "/tmp/healthy"]
+    initialDelaySeconds: 10
+    periodSeconds: 20
